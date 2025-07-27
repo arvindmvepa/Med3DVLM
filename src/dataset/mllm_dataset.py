@@ -280,7 +280,7 @@ class VQABratsDataset(VQADataset):
             image_ = np.load(new_image_abs_path)
             image_ = self.transform(image_)
             image.append(image_)
-        image = torch.stack(image, axis=0)
+        image = torch.cat(image, axis=1)  # Concatenate along depth dimension (axis=1)
 
         question = data["question"]
         answer = str(data["answer"])
