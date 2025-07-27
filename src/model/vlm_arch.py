@@ -54,8 +54,8 @@ class VLMMetaModel:
                 self.config.high_input_size = (32, 768)
 
         if model_args.pretrain_vision_model is not None:
-            vision_model_weights = load_state_dict_any(
-                model_args.pretrain_vision_model, device="cpu"
+            vision_model_weights = torch.load(
+                model_args.pretrain_vision_model, map_location="cpu"
             )
             self.vision_tower.vision_tower.load_state_dict(
                 vision_model_weights, strict=True
@@ -72,8 +72,8 @@ class VLMMetaModel:
             self.mm_projector = build_mm_projector(self.config)
 
         if model_args.pretrain_mm_mlp_adapter is not None:
-            mm_projector_weights = torch.load(
-                model_args.pretrain_mm_mlp_adapter, map_location="cpu"
+            mm_projector_weights = load_state_dict_any(
+                model_args.pretrain_mm_mlp_adapter, device="cpu"
             )
 
             if self.config.mm_projector_type == "mlp":
