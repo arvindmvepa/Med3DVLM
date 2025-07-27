@@ -15,7 +15,7 @@ CUDA_VISIBLE_DEVICES=$1 deepspeed src/train/train_vlm.py \
     --lora_enable True \
     --vision_select_layer -2 \
     --pretrain_vision_model ./output/DCFormer_SigLIP/pretrained_ViT.bin \
-    --pretrain_mm_mlp_adapter ./output/Med3DVLM-Qwen-2.5-7B-pretrain/mm_projector.bin \
+    --pretrain_mm_mlp_adapter ./output/Med3DVLM-Qwen-2.5-7B-pretrain/mm_projector.safetensors \
     --vqa_data_train_path $train_path \
     --vqa_data_val_path $val_path \
     --vqa_data_test_path $test_path \

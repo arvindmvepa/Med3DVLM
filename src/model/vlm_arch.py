@@ -52,8 +52,8 @@ class VLMMetaModel:
                 self.config.high_input_size = (32, 768)
 
         if model_args.pretrain_vision_model is not None:
-            vision_model_weights = torch.load(
-                model_args.pretrain_vision_model, map_location="cpu"
+            vision_model_weights = load_state_dict_any(
+                model_args.pretrain_vision_model, device="cpu"
             )
             self.vision_tower.vision_tower.load_state_dict(
                 vision_model_weights, strict=True
@@ -226,3 +226,22 @@ class VLMMetaForCausalLM(ABC):
                     f"Current: {input_embeddings.shape}. "
                     f"Number of new tokens: {num_new_tokens}."
                 )
+
+
+def load_state_dict_any(path: str, device: str = "cpu"):
+    # If a directory was passed, pick the best file inside it
+    if os.path.isdir(path):
+        # prefer safetensors, then bin/pt
+        cand = (glob.glob(os.path.join(path, "*.safetensors")) or
+                glob.glob(os.path.join(path, "*.bin")) or
+                glob.glob(os.path.join(path, "*.pt")))
+        if not cand:
+            raise FileNotFoundError(f"No weight files found in: {path}")
+        path = cand[0]
+
+    if path.endswith(".safetensors"):
+        from safetensors.torch import load_file as safe_load
+        return safe_load(path, device=device)      # returns a state_dict
+    else:
+        # PyTorch pickled state dicts
+        return torch.load(path, map_location=device, weights_only=True)
