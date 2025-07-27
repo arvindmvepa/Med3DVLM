@@ -108,158 +108,102 @@ def main():
 
     model_name = args.model_name_or_path.split("/")[-1]
 
-    if args.close_ended:
-        print("Evaluating close-ended VQA...")
-        output_path = os.path.join(args.output_dir, f"{model_name}_eval_close_vqa.csv")
-        with open(output_path, mode="w") as outfile:
-            writer = csv.writer(outfile)
+    print("Evaluating open-ended VQA...")
+    output_path = os.path.join(args.output_dir, f"eval_open_vqa.csv")
+    with open(output_path, mode="w") as outfile:
+        writer = csv.writer(outfile)
+        writer.writerow(
+            [
+                "Question Type",
+                "Question", 
+                "Answer",
+                "Pred",
+                "accuracy",
+                "bleu",
+                "rouge1",
+                "meteor",
+                "bert_f1",
+            ]
+        )
+        for sample in tqdm(test_dataloader):
+            question = sample["question"][0]  # Extract string from list
+            question_type = sample["question_type"][0]  # Extract from list
+            answer = sample["answer"]
+
+            image = sample["image"].to(device=device)
+            input_id = tokenizer(question, return_tensors="pt")["input_ids"].to(
+                device=device
+            )
+
+            with torch.inference_mode():
+                generation = model.generate(
+                    image,
+                    input_id,
+                    max_new_tokens=args.max_new_tokens,
+                    do_sample=args.do_sample,
+                    top_p=args.top_p,
+                    temperature=args.temperature,
+                )
+            generated_texts = tokenizer.batch_decode(
+                generation, skip_special_tokens=True
+            )
+
+            result = dict()
+            decoded_preds, decoded_labels = postprocess_text(
+                generated_texts, answer
+            )
+            
+            # Add accuracy metric like M3D
+            result["accuracy"] = compute_exact_match(decoded_preds, decoded_labels)
+
+            # Add error handling like M3D
+            try:
+                bleu_score = bleu.compute(
+                    predictions=decoded_preds, references=decoded_labels, max_order=1
+                )
+                result["bleu"] = bleu_score["bleu"]
+            except Exception:
+                result["bleu"] = np.nan
+
+            try:
+                rouge_score = rouge.compute(
+                    predictions=decoded_preds,
+                    references=decoded_labels,
+                    rouge_types=["rouge1"],
+                )
+                result["rouge1"] = rouge_score["rouge1"]
+            except Exception:
+                result["rouge1"] = np.nan
+
+            try:
+                meteor_score = meteor.compute(
+                    predictions=decoded_preds, references=decoded_labels
+                )
+                result["meteor"] = meteor_score["meteor"]
+            except Exception:
+                result["meteor"] = np.nan
+
+            try:
+                bert_score = bertscore.compute(
+                    predictions=decoded_preds, references=decoded_labels, lang="en"
+                )
+                result["bert_f1"] = sum(bert_score["f1"]) / len(bert_score["f1"])
+            except Exception:
+                result["bert_f1"] = np.nan
+
             writer.writerow(
                 [
-                    "Question Type",
-                    "Question",
-                    "Answer",
-                    "Answer Choice",
-                    "Pred",
-                    "Correct",
+                    question_type,
+                    question, 
+                    answer[0],
+                    generated_texts[0],
+                    result["accuracy"],
+                    result["bleu"],
+                    result["rouge1"],
+                    result["meteor"],
+                    result["bert_f1"],
                 ]
             )
-            for sample in tqdm(test_dataloader):
-                question = sample["question"]
-                question_type = sample["question_type"].item()
-                answer_choice = sample["answer_choice"]
-                answer = sample["answer"]
-
-                image = sample["image"].to(device=device)
-
-                input_id = tokenizer(question, return_tensors="pt")["input_ids"].to(
-                    device=device
-                )
-
-                with torch.inference_mode():
-                    generation = model.generate(
-                        image,
-                        input_id,
-                        max_new_tokens=args.max_new_tokens,
-                        do_sample=args.do_sample,
-                        top_p=args.top_p,
-                        temperature=args.temperature,
-                    )
-                generated_texts = tokenizer.batch_decode(
-                    generation, skip_special_tokens=True
-                )
-
-                if answer_choice[0] + "." in generated_texts[0]:
-                    correct = 1
-                else:
-                    correct = 0
-
-                writer.writerow(
-                    [
-                        question_type,
-                        question[0],
-                        answer[0],
-                        answer_choice[0],
-                        generated_texts[0],
-                        correct,
-                    ]
-                )
-    else:
-        print("Evaluating open-ended VQA...")
-        output_path = os.path.join(args.output_dir, f"{model_name}_eval_open_vqa.csv")
-        with open(output_path, mode="w") as outfile:
-            writer = csv.writer(outfile)
-            writer.writerow(
-                [
-                    "Question Type",
-                    "Question", 
-                    "Answer",
-                    "Pred",
-                    "accuracy",
-                    "bleu",
-                    "rouge1",
-                    "meteor",
-                    "bert_f1",
-                ]
-            )
-            for sample in tqdm(test_dataloader):
-                question = sample["question"][0]  # Extract string from list
-                question_type = sample["question_type"][0]  # Extract from list
-                answer = sample["answer"]
-
-                image = sample["image"].to(device=device)
-                input_id = tokenizer(question, return_tensors="pt")["input_ids"].to(
-                    device=device
-                )
-
-                with torch.inference_mode():
-                    generation = model.generate(
-                        image,
-                        input_id,
-                        max_new_tokens=args.max_new_tokens,
-                        do_sample=args.do_sample,
-                        top_p=args.top_p,
-                        temperature=args.temperature,
-                    )
-                generated_texts = tokenizer.batch_decode(
-                    generation, skip_special_tokens=True
-                )
-
-                result = dict()
-                decoded_preds, decoded_labels = postprocess_text(
-                    generated_texts, answer
-                )
-                
-                # Add accuracy metric like M3D
-                result["accuracy"] = compute_exact_match(decoded_preds, decoded_labels)
-
-                # Add error handling like M3D
-                try:
-                    bleu_score = bleu.compute(
-                        predictions=decoded_preds, references=decoded_labels, max_order=1
-                    )
-                    result["bleu"] = bleu_score["bleu"]
-                except Exception:
-                    result["bleu"] = np.nan
-
-                try:
-                    rouge_score = rouge.compute(
-                        predictions=decoded_preds,
-                        references=decoded_labels,
-                        rouge_types=["rouge1"],
-                    )
-                    result["rouge1"] = rouge_score["rouge1"]
-                except Exception:
-                    result["rouge1"] = np.nan
-
-                try:
-                    meteor_score = meteor.compute(
-                        predictions=decoded_preds, references=decoded_labels
-                    )
-                    result["meteor"] = meteor_score["meteor"]
-                except Exception:
-                    result["meteor"] = np.nan
-
-                try:
-                    bert_score = bertscore.compute(
-                        predictions=decoded_preds, references=decoded_labels, lang="en"
-                    )
-                    result["bert_f1"] = sum(bert_score["f1"]) / len(bert_score["f1"])
-                except Exception:
-                    result["bert_f1"] = np.nan
-
-                writer.writerow(
-                    [
-                        question_type,
-                        question, 
-                        answer[0],
-                        generated_texts[0],
-                        result["accuracy"],
-                        result["bleu"],
-                        result["rouge1"],
-                        result["meteor"],
-                        result["bert_f1"],
-                    ]
-                )
 
 if __name__ == "__main__":
     main()
