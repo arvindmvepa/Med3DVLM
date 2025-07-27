@@ -399,7 +399,6 @@ class VQAYNDataset(Dataset):
                 image = np.load(image_abs_path)  # nomalized, 0-1, C,D,H,W
                 # image = np.load(img_path)[np.newaxis, ...]  # nomalized
                 image = self.transform(image)
-                print(f"Image shape: {image.shape}")
 
                 question = data["Question"]
                 answer = str(data["Answer"])
