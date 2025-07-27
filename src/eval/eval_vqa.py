@@ -11,6 +11,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from src.model.llm.qwen import VLMQwenForCausalLM
 
 from src.dataset.mllm_dataset import VQABratsDataset
 
@@ -77,7 +78,7 @@ def main():
         use_fast=False,
         trust_remote_code=True,
     )
-    model = AutoModelForCausalLM.from_pretrained(
+    model = VLMQwenForCausalLM.from_pretrained(
         args.model_name_or_path, device_map="auto", trust_remote_code=True
     )
     model = model.to(device=device)
