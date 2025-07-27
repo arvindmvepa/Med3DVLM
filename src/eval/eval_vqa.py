@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from src.dataset.mllm_dataset import VQADataset
+from src.dataset.mllm_dataset import VQABratsDataset
 
 bleu = evaluate.load("bleu")
 bertscore = evaluate.load("bertscore")
@@ -82,9 +82,7 @@ def main():
     )
     model = model.to(device=device)
 
-    test_dataset = VQADataset(
-        args, tokenizer=tokenizer, close_ended=args.close_ended, mode="test"
-    )
+    test_dataset = VQABratsDataset(args, tokenizer=tokenizer, mode="test")
 
     test_dataloader = DataLoader(
         test_dataset,
