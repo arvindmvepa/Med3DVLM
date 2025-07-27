@@ -417,12 +417,9 @@ def main():
     data_args.proj_out_num = model.get_model().mm_projector.proj_out_num
     rank0_print("vision tokens output from projector: ", data_args.proj_out_num)
 
-    if model_args.tune_mm_mlp_adapter:
-        train_dataset = TextDatasets(data_args, tokenizer, mode="train")
-    else:
-        train_dataset = TextYNDatasets(data_args, tokenizer, mode="train")
+    train_dataset = TextDatasets(data_args, tokenizer, mode="train")
 
-    eval_dataset = CapDataset(data_args, tokenizer, mode="validation")
+    eval_dataset = TextDatasets(data_args, tokenizer, mode="validation")
     data_collator = DataCollator()
 
     rank0_print("=" * 20 + " Training " + "=" * 20)
