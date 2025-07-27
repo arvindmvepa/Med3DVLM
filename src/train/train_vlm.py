@@ -9,7 +9,6 @@ import torch.distributed as dist
 import transformers
 from transformers import AutoTokenizer, LlamaForCausalLM
 
-import wandb
 from src.dataset.mllm_dataset import CapDataset, TextDatasets, TextYNDatasets
 from src.model.llm.qwen import VLMQwenForCausalLM
 from src.train.trainer import MLLMTrainer
@@ -434,8 +433,9 @@ def main():
     )
 
     if is_rank_zero():
-        wandb.login()
-        wandb.init(project="MLLM", name=model_args.wb_name)
+        pass
+        #wandb.login()
+        #wandb.init(project="MLLM", name=model_args.wb_name)
 
     if os.path.exists(training_args.output_dir):
         checkpoints = sorted(
@@ -473,7 +473,8 @@ def main():
         )
 
     if is_rank_zero():
-        wandb.finish()
+        pass
+        #wandb.finish()
 
     if dist.is_available() and dist.is_initialized():
         dist.destroy_process_group()

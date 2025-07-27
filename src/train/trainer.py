@@ -5,8 +5,6 @@ from torch import distributed as dist
 from tqdm import tqdm
 from transformers import Trainer
 
-import wandb
-
 
 def is_rank_zero():
     if "RANK" in os.environ:
@@ -26,14 +24,15 @@ class CLIPTrainer(Trainer):
         loss = outputs["loss"]
 
         if is_rank_zero():
-            wandb.log(
-                {
-                    "train/loss": loss.item(),
-                    "train/learning_rate": self.lr_scheduler.get_last_lr()[0],
-                    "train/step": self.state.global_step,
-                },
-                step=self.state.global_step,
-            )
+            pass
+            #wandb.log(
+            #    {
+            #        "train/loss": loss.item(),
+            #        "train/learning_rate": self.lr_scheduler.get_last_lr()[0],
+            #        "train/step": self.state.global_step,
+            #    },
+            #    step=self.state.global_step,
+            #)
 
         return (loss, outputs) if return_outputs else loss
 
@@ -58,13 +57,14 @@ class MLLMTrainer(Trainer):
         loss = outputs["loss"]
 
         if is_rank_zero():
-            wandb.log(
-                {
-                    "train/loss": loss.item(),
-                    "train/learning_rate": self.lr_scheduler.get_last_lr()[0],
-                    "train/step": self.state.global_step,
-                },
-                step=self.state.global_step,
-            )
+            pass
+            #wandb.log(
+            #    {
+            #        "train/loss": loss.item(),
+            #        "train/learning_rate": self.lr_scheduler.get_last_lr()[0],
+            #        "train/step": self.state.global_step,
+            #    },
+            #    step=self.state.global_step,
+            #)
 
         return (loss, outputs) if return_outputs else loss
