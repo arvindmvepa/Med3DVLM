@@ -15,6 +15,15 @@ from src.model.llm.qwen import VLMQwenForCausalLM
 
 from src.dataset.mllm_dataset import VQABratsDataset
 
+def compute_exact_match(preds, labels):
+    """Compute exact match accuracy"""
+    correct = 0
+    total = len(preds)
+    for pred, label_list in zip(preds, labels):
+        if pred.lower().strip() in [label.lower().strip() for label in label_list]:
+            correct += 1
+    return correct / total if total > 0 else 0
+
 bleu = evaluate.load("bleu")
 bertscore = evaluate.load("bertscore")
 meteor = evaluate.load("meteor")
@@ -162,9 +171,10 @@ def main():
             writer.writerow(
                 [
                     "Question Type",
-                    "Question",
+                    "Question", 
                     "Answer",
                     "Pred",
+                    "accuracy",
                     "bleu",
                     "rouge1",
                     "meteor",
@@ -172,8 +182,8 @@ def main():
                 ]
             )
             for sample in tqdm(test_dataloader):
-                question = sample["question"]
-                question_type = sample["question_type"].item()
+                question = sample["question"][0]  # Extract string from list
+                question_type = sample["question_type"][0]  # Extract from list
                 answer = sample["answer"]
 
                 image = sample["image"].to(device=device)
@@ -198,72 +208,58 @@ def main():
                 decoded_preds, decoded_labels = postprocess_text(
                     generated_texts, answer
                 )
-                bleu_score = bleu.compute(
-                    predictions=decoded_preds, references=decoded_labels, max_order=1
-                )
-                result["bleu"] = bleu_score["bleu"]
+                
+                # Add accuracy metric like M3D
+                result["accuracy"] = compute_exact_match(decoded_preds, decoded_labels)
 
-                rouge_score = rouge.compute(
-                    predictions=decoded_preds,
-                    references=decoded_labels,
-                    rouge_types=["rouge1"],
-                )
-                result["rouge1"] = rouge_score["rouge1"]
+                # Add error handling like M3D
+                try:
+                    bleu_score = bleu.compute(
+                        predictions=decoded_preds, references=decoded_labels, max_order=1
+                    )
+                    result["bleu"] = bleu_score["bleu"]
+                except Exception:
+                    result["bleu"] = np.nan
 
-                meteor_score = meteor.compute(
-                    predictions=decoded_preds, references=decoded_labels
-                )
-                result["meteor"] = meteor_score["meteor"]
+                try:
+                    rouge_score = rouge.compute(
+                        predictions=decoded_preds,
+                        references=decoded_labels,
+                        rouge_types=["rouge1"],
+                    )
+                    result["rouge1"] = rouge_score["rouge1"]
+                except Exception:
+                    result["rouge1"] = np.nan
 
-                bert_score = bertscore.compute(
-                    predictions=decoded_preds, references=decoded_labels, lang="en"
-                )
-                result["bert_f1"] = sum(bert_score["f1"]) / len(bert_score["f1"])
+                try:
+                    meteor_score = meteor.compute(
+                        predictions=decoded_preds, references=decoded_labels
+                    )
+                    result["meteor"] = meteor_score["meteor"]
+                except Exception:
+                    result["meteor"] = np.nan
+
+                try:
+                    bert_score = bertscore.compute(
+                        predictions=decoded_preds, references=decoded_labels, lang="en"
+                    )
+                    result["bert_f1"] = sum(bert_score["f1"]) / len(bert_score["f1"])
+                except Exception:
+                    result["bert_f1"] = np.nan
 
                 writer.writerow(
                     [
                         question_type,
-                        question[0],
+                        question, 
                         answer[0],
                         generated_texts[0],
+                        result["accuracy"],
                         result["bleu"],
                         result["rouge1"],
                         result["meteor"],
                         result["bert_f1"],
                     ]
                 )
-
-    Qustion_Type = {1: "Plane", 2: "Phase", 3: "Organ", 4: "Abnormality", 5: "Location"}
-
-    if args.close_ended:
-        with open(output_path, mode="r") as infile:
-            reader = csv.DictReader(infile)
-            total = [0, 0, 0, 0, 0]
-            correct = [0, 0, 0, 0, 0]
-            for row in reader:
-                total[int(row["Question Type"]) - 1] += 1
-                if row["Correct"] == "1":
-                    correct[int(row["Question Type"]) - 1] += 1
-
-        for i in range(5):
-            print(f"{Qustion_Type[i + 1]}: {correct[i] / total[i]:.4f}")
-    else:
-        with open(output_path, mode="r") as infile:
-            reader = csv.DictReader(infile)
-            type = {"1": [], "2": [], "3": [], "4": [], "5": []}
-            scores = {"bleu": [], "rouge1": [], "meteor": [], "bert_f1": []}
-            for row in reader:
-                for metric in scores.keys():
-                    scores[metric].append(float(row[metric]))
-
-                type[row["Question Type"]].append(row)
-
-        print("\nType Average scores:")
-        for k, v in type.items():
-            for metric in scores.keys():
-                avg = sum([float(row[metric]) for row in v]) / len(v)
-                print(f"{Qustion_Type[int(k)]} {metric}: {avg:.4f}")
-
 
 if __name__ == "__main__":
     main()
