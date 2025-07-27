@@ -211,8 +211,8 @@ class VLMMetaForCausalLM(ABC):
                     p.requires_grad = True
 
         if model_args.pretrain_mm_mlp_adapter:
-            mm_projector_weights = torch.load(
-                model_args.pretrain_mm_mlp_adapter, map_location="cpu"
+            mm_projector_weights = load_state_dict_any(
+                model_args.pretrain_mm_mlp_adapter, device="cpu"
             )
 
             embed_tokens_weight = mm_projector_weights["model.embed_tokens.weight"]
