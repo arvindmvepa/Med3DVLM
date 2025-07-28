@@ -48,3 +48,16 @@ python src/utils/merge_lora_weights_and_save_hf_model.py \
     --vision_tower "dcformer" \
     --model_with_lora "$output_dir"/model_with_lora.bin \
     --output_dir="$output_dir"/hf
+
+
+PYTHONPATH=. CUDA_VISIBLE_DEVICES=$1 python src/eval/eval_vqa.py \
+    --model_name_or_path "$output_dir"/hf \
+    --vqa_data_test_path $test_path \
+    --max_length 512 \
+    --proj_out_num 256 \
+    --do_sample \
+    --output_dir $output_dir/eval_vqa \
+
+PYTHONPATH=. CUDA_VISIBLE_DEVICES=$1 python src/eval/eval_vqa_utils.py \
+--output_dir $output_dir/eval_vqa \
+--gt_file $test_path \
