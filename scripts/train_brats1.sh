@@ -1,11 +1,11 @@
 #!/bin/bash
 
-output_dir=./output/finetuned-model-new-dataset-v1-0000
-train_path=/local2/amvepa91/MedTrinity-25M/brats_gli_3d_vqa_subjTrue_train_updated_v10_seed0_multitask_fixed.json
-val_path=/local2/amvepa91/MedTrinity-25M/brats_gli_3d_vqa_subjTrue_val_updated_v10_seed0_multitask_fixed.json
-test_path=/local2/amvepa91/MedTrinity-25M/brats_gli_3d_vqa_subjTrue_test_updated_v10_seed0_multitask_fixed.json
+output_dir=./output/finetuned-model-new-dataset-0000
+train_path=/local2/amvepa91/MedTrinity-25M/brats_gli_3d_vqa_subjTrue_train_updated_v2_seed0_multitask_fixed.json
+val_path=/local2/amvepa91/MedTrinity-25M/brats_gli_3d_vqa_subjTrue_val_updated_v2_seed0_multitask_fixed.json
+test_path=/local2/amvepa91/MedTrinity-25M/brats_gli_3d_vqa_subjTrue_test_updated_v2_seed0_multitask_fixed.json
 
-CUDA_VISIBLE_DEVICES=$1 deepspeed src/train/train_vlm.py \
+CUDA_VISIBLE_DEVICES=$1 deepspeed --master_port 29600 src/train/train_vlm.py \
     --deepspeed ./scripts/zero2.json \
     --wb_name Med3DVLM-Qwen-2.5-7B-finetune \
     --vision_tower "dcformer" \
