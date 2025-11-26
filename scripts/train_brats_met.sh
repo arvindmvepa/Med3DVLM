@@ -5,7 +5,7 @@ train_path=/local2/amvepa91/MedTrinity-25M/brats_met_3d_vqa_subjTrue_train_updat
 val_path=/local2/amvepa91/MedTrinity-25M/brats_met_3d_vqa_subjTrue_val_updated_v11_seed0_multitask_fixed.json
 test_path=/local2/amvepa91/MedTrinity-25M/brats_met_3d_vqa_subjTrue_test_updated_v11_seed0_multitask_fixed.json
 
-CUDA_VISIBLE_DEVICES=$1 deepspeed src/train/train_vlm.py \
+PYTHONPATH=. CUDA_VISIBLE_DEVICES=$1 deepspeed src/train/train_vlm.py \
     --deepspeed ./scripts/zero2.json \
     --wb_name Med3DVLM-Qwen-2.5-7B-finetune \
     --vision_tower "dcformer" \
@@ -40,7 +40,7 @@ CUDA_VISIBLE_DEVICES=$1 deepspeed src/train/train_vlm.py \
     --dataloader_pin_memory True \
     --dataloader_num_workers 4
 
-python src/utils/merge_lora_weights_and_save_hf_model.py \
+PYTHONPATH=. python src/utils/merge_lora_weights_and_save_hf_model.py \
     --model_name_or_path Qwen/Qwen2.5-7B-Instruct \
     --model_type vlm_qwen \
     --mm_projector_type "mixer" \
