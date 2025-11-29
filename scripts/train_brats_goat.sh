@@ -5,7 +5,7 @@ train_path=/local2/amvepa91/MedTrinity-25M/brats_goat_3d_vqa_subjTrue_train_upda
 val_path=/local2/amvepa91/MedTrinity-25M/brats_goat_3d_vqa_subjTrue_val_updated_v11_seed0_multitask_fixed.json
 test_path=/local2/amvepa91/MedTrinity-25M/brats_goat_3d_vqa_subjTrue_test_updated_v11_seed0_multitask_fixed.json
 
-PYTHONPATH=. CUDA_VISIBLE_DEVICES=$1 deepspeed src/train/train_vlm.py \
+PYTHONPATH=. CUDA_VISIBLE_DEVICES=$1 deepspeed --master_port 29600 src/train/train_vlm.py \
     --deepspeed ./scripts/zero2.json \
     --wb_name Med3DVLM-Qwen-2.5-7B-finetune \
     --vision_tower "dcformer" \
